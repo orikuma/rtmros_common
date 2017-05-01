@@ -514,9 +514,14 @@ class ServiceVisitor (idlvisitor.AstVisitor):
         #  make ROS bridge functions in .cpp
         compsrc = open(tmpdir + '/' + module_name + '.cpp').read()
 
+        if options.use_service_port_name:
+            port_instance_name = service_name
+        else:
+            port_instance_name = "service0"
+            
         port_name_src = """  nh = ros::NodeHandle("~");
-  std::string port_name = "service0";
-  nh.getParam("service_port", port_name);"""
+  std::string port_name = "%s";
+  nh.getParam("service_port", port_name);""" % port_instance_name
         compsrc = addline(port_name_src, compsrc, 'Set service consumers to Ports')
         compsrc = compsrc.replace('registerConsumer("service0"','registerConsumer(port_name.c_str()')
 
@@ -667,12 +672,16 @@ if __name__ == '__main__':
     parser.add_option("--interfaces", action="store_true",
                       dest="interfaces", default=False,
                       help="print interface names")
+    parser.add_option("--use-service-port-name", action="store_true",
+                      dest="use_service_port_name", default=False,
+                      help="use service port name as instance name (if this option is not set, instance name is set as service0)")
     parser.add_option("--package-name", action="store", type="string",
                       dest="package_name", default=False,
                       help="overwrite package name")
     parser.add_option("--tmpdir", action="store", type="string",
                       dest="tmpdir", default="/tmp/idl2srv",
                       help="tmporary directory")
+    
     (options, args) = parser.parse_args()
 
     idlfile = options.idlfile
