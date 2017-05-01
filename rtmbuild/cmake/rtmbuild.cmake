@@ -28,7 +28,7 @@ endif()
 ## rtm_idlc, rtm_idlflags, rtm_idldir
 ## rtm_cxx,  rtm_cflags
 ## hrp_idldir
-
+## extra_idl2srv_options
 
 #
 # setup global variables
