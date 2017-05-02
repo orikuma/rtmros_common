@@ -113,7 +113,7 @@
 
     <rtconnect from="$(arg SIMULATOR_NAME_ANGLE).rtc:q"     to="HrpsysSeqStateROSBridge0.rtc:rsangle" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)"/>
     <rtconnect from="$(arg SIMULATOR_NAME_VELOCITY).rtc:dq" to="HrpsysSeqStateROSBridge0.rtc:rsvel" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)" if="$(arg USE_VELOCITY_OUTPUT)" />
-    <rtconnect from="$(arg SIMULATOR_NAME_TORQUE).rtc:tau"  to="HrpsysSeqStateROSBridge0.rtc:rstorque" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)" unless="$(arg USE_TORQUEFILTER)"/>
+    <rtconnect from="$(arg SIMULATOR_NAME_TORQUE).rtc:tauOut"  to="HrpsysSeqStateROSBridge0.rtc:rstorque" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)" unless="$(arg USE_TORQUEFILTER)"/>
     <rtconnect from="StateHolderServiceROSBridge.rtc:StateHolderService" to="sh.rtc:StateHolderService"  subscription_type="new"/>
     <rtconnect from="sh.rtc:baseTformOut" to="HrpsysSeqStateROSBridge0.rtc:baseTform" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)" unless="$(arg USE_WALKING)"/>
     <rtconnect from="sh.rtc:qOut" to="HrpsysSeqStateROSBridge0.rtc:mcangle" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)"/>
@@ -121,6 +121,8 @@
     <rtconnect from="HrpsysJointTrajectoryBridge0.rtc:SequencePlayerService" to="seq.rtc:SequencePlayerService" subscription_type="new"/>
     <rtconnect from="DataLoggerServiceROSBridge.rtc:DataLoggerService" to="log.rtc:DataLoggerService" subscription_type="new"/>
     <rtconnect from="SequencePlayerServiceROSBridge.rtc:SequencePlayerService" to="seq.rtc:SequencePlayerService" subscription_type="new"/>
+
+    <rtconnect from="sh.rtc:baseRpyOut" to="HrpsysSeqStateROSBridge0.rtc:baseRpy" subscription_type="$(arg subscription_type)" push_policy="$(arg push_policy)" push_rate="$(arg push_rate)" buffer_length="$(arg buffer_length)"/>
 
     <rtactivate component="HrpsysSeqStateROSBridge0.rtc" />
     <rtactivate component="HrpsysJointTrajectoryBridge0.rtc" />
