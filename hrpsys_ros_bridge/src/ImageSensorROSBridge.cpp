@@ -78,7 +78,20 @@ RTC::ReturnCode_t ImageSensorROSBridge::onInitialize()
   P[0] = 700; P[1] =   0; P[2] = 160; P[3] = 0;
   P[4] =   0; P[5] = 700; P[6] = 120; P[7] = 0;
   P[8] =   0; P[9] =   0; P[10] = 1;  P[11] = 0;
-  overwrite_P = overwrite_K = false;
+  // camera_param D
+  D.resize(5); // assuming plumb_bob
+  for (int i = 0; i < 5; i++) { 
+    D[i] = 0.0;
+  }
+  // camera param R
+  for (int i = 0; i < 9; i++) {
+    if (i == 0 || i == 4 || i == 8) { 
+      R[i] = 1.0;
+    } else {
+      R[i] = 0.0;
+    }
+  }
+  overwrite_D = overwrite_P = overwrite_K = false;
   ros::param::param<std::string>("~frame_id", frame, "camera");
   if(ros::param::has("~camera_param_K")) {
     XmlRpc::XmlRpcValue param_list;
@@ -114,6 +127,41 @@ RTC::ReturnCode_t ImageSensorROSBridge::onInitialize()
       }
     }
   }
+  if(ros::param::has("~camera_param_D")) { // assuming plumb_bob
+    XmlRpc::XmlRpcValue param_list;
+    if (ros::param::get("~camera_param_D", param_list)) {
+      overwrite_D = true;
+      if(param_list.getType() == XmlRpc::XmlRpcValue::TypeArray) {
+        for (int i = 0; i < param_list.size(); i++) {
+          double d;
+          if(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeInt) {
+            d = (int)param_list[i];
+          } else if(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble) {
+            d = (double)param_list[i];
+          }
+          if(i < 5) D[i] =  d;
+        }
+      }
+    }
+  }
+  if(ros::param::has("~camera_param_R")) {
+    XmlRpc::XmlRpcValue param_list;
+    if (ros::param::get("~camera_param_R", param_list)) {
+      // overwrite_R = true;
+      if(param_list.getType() == XmlRpc::XmlRpcValue::TypeArray) {
+        for (int i = 0; i < param_list.size(); i++) {
+          double r;
+          if(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeInt) {
+            r = (int)param_list[i];
+          } else if(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble) {
+            r = (double)param_list[i];
+          }
+          if(i < 9) R[i] =  r;
+        }
+      }
+    }
+  }
+  
   tm.tick();
   return RTC::RTC_OK;
 }
@@ -206,9 +254,10 @@ RTC::ReturnCode_t ImageSensorROSBridge::onExecute(RTC::UniqueId ec_id)
     info->width  = image->width;
     info->height = image->height;
     info->distortion_model = "plumb_bob";
+    info->D = D;
     info->K = K;
     info->P = P;
-    info->R[0] = info->R[4] = info->R[8] = 1;
+    info->R = R;
     info->header.stamp = capture_time;
     info->header.frame_id = frame;
     info_pub.publish(info);
@@ -261,14 +310,18 @@ RTC::ReturnCode_t ImageSensorROSBridge::onExecute(RTC::UniqueId ec_id)
     info->width  = image->width;
     info->height = image->height;
     info->distortion_model = "plumb_bob";
-    if (m_timage.data.intrinsic.distortion_coefficient.length() > 0) {
-      info->D.resize(m_timage.data.intrinsic.distortion_coefficient.length());
-      for(int n = 0; n < m_timage.data.intrinsic.distortion_coefficient.length(); n++) {
-        info->D[n] = m_timage.data.intrinsic.distortion_coefficient[n];
-      }
+    if (overwrite_D) {
+      info->D = D;
     } else {
-      ROS_WARN("intrinsic.distortion_coefficient.length() is 0, set dummy 0 array to D");
-      info->D.resize(5);
+      if (m_timage.data.intrinsic.distortion_coefficient.length() > 0) {
+        info->D.resize(m_timage.data.intrinsic.distortion_coefficient.length());
+        for(int n = 0; n < m_timage.data.intrinsic.distortion_coefficient.length(); n++) {
+          info->D[n] = m_timage.data.intrinsic.distortion_coefficient[n];
+        }
+      } else {
+        ROS_WARN("intrinsic.distortion_coefficient.length() is 0, set dummy 0 array to D");
+        info->D.resize(5);
+      }
     }
     if (overwrite_K) {
       info->K = K;
@@ -295,7 +348,7 @@ RTC::ReturnCode_t ImageSensorROSBridge::onExecute(RTC::UniqueId ec_id)
       info->P[3] = info->P[7] = info->P[8] = info->P[9] = info->P[11] = 0.0;
       info->P[10] = 1.0;
     }
-    info->R[0] = info->R[4] = info->R[8] = 1;
+    info->R = R;
     info->header = image->header;
     info_pub.publish(info);
 
